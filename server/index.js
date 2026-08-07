@@ -1,6 +1,11 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { existsSync } from "fs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { validateWith, validateParam } from "./middleware/validate.js";
 import {
@@ -42,13 +47,15 @@ async function hsRequest(path, method = "GET", body = null) {
   return data;
 }
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+// ── API routes (mounted at /api) ──────────────────────────────────────────────
 
-app.get("/config", (req, res) => {
+const api = express.Router();
+
+api.get("/config", (req, res) => {
   res.json({ publishableKey: HS_PUBLISHABLE_KEY });
 });
 
-app.post(
+api.post(
   "/create-or-get-customer",
   validateWith(createCustomerSchema),
   async (req, res) => {
@@ -62,7 +69,7 @@ app.post(
   }
 );
 
-app.get(
+api.get(
   "/saved-cards/:customerId",
   validateParam("customerId", customerIdSchema),
   async (req, res) => {
@@ -83,7 +90,7 @@ app.get(
   }
 );
 
-app.post(
+api.post(
   "/create-payment",
   validateWith(createPaymentSchema),
   async (req, res) => {
@@ -108,7 +115,7 @@ app.post(
   }
 );
 
-app.post(
+api.post(
   "/capture-payment",
   validateWith(capturePaymentSchema),
   async (req, res) => {
@@ -122,7 +129,7 @@ app.post(
   }
 );
 
-app.get(
+api.get(
   "/payment-status/:paymentId",
   validateParam("paymentId", paymentIdSchema),
   async (req, res) => {
@@ -141,7 +148,7 @@ app.get(
   }
 );
 
-app.post(
+api.post(
   "/refund",
   validateWith(refundSchema),
   async (req, res) => {
@@ -158,7 +165,7 @@ app.post(
   }
 );
 
-app.post("/webhook", (req, res) => {
+api.post("/webhook", (req, res) => {
   const event = req.body;
 
   switch (event.event_type) {
@@ -180,6 +187,16 @@ app.post("/webhook", (req, res) => {
 
   res.json({ received: true });
 });
+
+app.use("/api", api);
+
+// ── Serve built React app in production ───────────────────────────────────────
+
+const clientDist = join(__dirname, "../client/dist");
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get("*", (req, res) => res.sendFile(join(clientDist, "index.html")));
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
