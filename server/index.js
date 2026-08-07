@@ -195,7 +195,7 @@ app.use("/api", api);
 const clientDist = join(__dirname, "../client/dist");
 if (existsSync(clientDist)) {
   app.use(express.static(clientDist));
-  app.get("*", (req, res) => res.sendFile(join(clientDist, "index.html")));
+  app.get("/{*path}", (req, res) => res.sendFile(join(clientDist, "index.html")));
 }
 
 app.listen(PORT, () => {
