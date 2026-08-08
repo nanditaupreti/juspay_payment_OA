@@ -106,7 +106,7 @@ body {
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   padding: 28px;
-  margin-top: -32px;
+  margin-top: 32px;
   position: relative;
   z-index: 10;
 }
